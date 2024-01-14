@@ -39,7 +39,7 @@ def _get_translation(scanned_text):
      }
     )
     if response.status_code == 200:
-        print(response.json())
+        print(str(response.json()["translations"][0]["text"]))
     else:
         print(f"Error requesting URL: {url}\n{response.status_code}:\n{response.reason}")
 
