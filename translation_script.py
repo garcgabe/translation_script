@@ -26,6 +26,7 @@ def main(filepath, start_time):
     if new_file:
         print(new_file)
         scanned_text = pytesseract.image_to_string(Image.open(filepath+new_file))
+        new_file = None
         print(scanned_text)
         start_time = time.time()
         _get_translation(scanned_text)
