@@ -20,7 +20,7 @@ def main(filepath, start_time):
     for file in files:
         file_stats = os.stat(filepath+file)
         if file_stats.st_mtime > start_time and "DS_Store" not in file:
-            print(f"File: {file}, last mod: {file_stats.st_mtime}")
+            #print(f"File: {file}, last mod: {file_stats.st_mtime}")
             new_file = file
 
     if new_file:
@@ -39,6 +39,7 @@ def _get_translation(scanned_text):
     )
     if response.status_code == 200:
         print(str(response.json()["translations"][0]["text"]).replace("\n", " "))
+        print("\n")
     else:
         print(f"Error requesting URL: {url}\n{response.status_code}:\n{response.reason}")
 
