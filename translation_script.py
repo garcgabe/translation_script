@@ -44,7 +44,6 @@ def _get_translation(scanned_text):
         print(f"Error requesting URL: {url}\n{response.status_code}:\n{response.reason}")
 
 
-
 if __name__=="__main__":
     session_start_time = time.time()
     print(f"Session start time: {session_start_time}")
