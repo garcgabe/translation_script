@@ -24,13 +24,11 @@ def main(filepath, start_time):
             new_file = file
 
     if new_file:
-        print(new_file)
         scanned_text = pytesseract.image_to_string(Image.open(filepath+new_file))
-        new_file = None
-        print(scanned_text)
-        start_time = time.time()
+        print(scanned_text.replace("\n", " "))
         _get_translation(scanned_text)
 
+    return time.time()
 def _get_translation(scanned_text):
     response = requests.post(url="https://api-free.deepl.com/v2/translate", 
     headers={'Authorization': 'DeepL-Auth-Key ' + DEEPL_ACCESS_KEY}, \
@@ -53,6 +51,6 @@ if __name__=="__main__":
 
     while(True):
         time.sleep(3)
-        main(filepath, session_start_time)
+        session_start_time = main(filepath, session_start_time)
 
         
