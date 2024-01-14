@@ -29,7 +29,7 @@ def main(filepath):
         print(scanned_text)
         _get_translation(scanned_text)
 
-def get_translation(scanned_text):
+def _get_translation(scanned_text):
     response = requests.post(url="https://api-free.deepl.com/v2/translate", 
     headers={'Authorization': 'DeepL-Auth-Key ' + DEEPL_ACCESS_KEY}, \
     data={"text": [f"scanned_text"],
