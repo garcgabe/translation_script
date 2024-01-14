@@ -1,35 +1,58 @@
-import pytesseract
-from PIL import Image
 from env import DEEPL_ACCESS_KEY
 import requests
+import time, os, keyboard
 
-import time, os
-from bs4 import BeautifulSoup
+# text to speech
+from gtts import gTTS 
+# playing speech
+from playsound import playsound
+# transcribe audio
+import whisper
 
-#def ex():
-    #response = requests.get(url)
-    # if response.status_code == 200:
-    #     html = BeautifulSoup(response.content, 'html.parser')
-    #     ex = html.find_all(re.compile(""))
-    # else:
-    #     print(f"Error requesting URL: {url}\n{response.status_code}:\n{response.reason}")
+import sounddevice as sd
+from scipy.io.wavfile import write
+
+
+def record_audio():
+    fs = 44100  # Sample rate
+    seconds = 10  # Duration of recording
+
+    recording = sd.rec(int(seconds * fs), samplerate=fs, channels=2)
+    sd.wait()  # Wait until recording is finished
+    write('input.wav', fs, recording)  # Save as WAV file
+    return
+
+ 
+# Whisper performs speech-to-text
+# give it output.wav
+def audio_to_text(audio_file):
+    model = whisper.load_model("base")
+    return model.transcribe("input.wav")['text']
+
+
+def text_to_speech(message: str, language = "es"):
+    speech = gTTS(text=message, lang=language)
+    speech.save('output.mp3')
+    playsound('output.mp3')
 
 def main(filepath, start_time):
-    new_file = None
-    files = os.listdir(filepath)
-    for file in files:
-        file_stats = os.stat(filepath+file)
-        if file_stats.st_mtime > start_time and "DS_Store" not in file:
-            #print(f"File: {file}, last mod: {file_stats.st_mtime}")
-            new_file = file
+    if keyboard.is_pressed('q'):
+        record_audio()
+        scanned_text = audio_to_text("output.wav")
+        print(scanned_text)
+        text_to_speech(scanned_text)
+        translated = _get_translation(scanned_text)
+        print(translated)
+
 
     if new_file:
-        scanned_text = pytesseract.image_to_string(Image.open(filepath+new_file))
+        text_to_translate = (filepath+new_file)
         print(scanned_text.replace("\n", " "))
         _get_translation(scanned_text)
 
     return time.time()
-def _get_translation(scanned_text):
+
+def _get_translation(scanned_text: str):
     response = requests.post(url="https://api-free.deepl.com/v2/translate", 
     headers={'Authorization': 'DeepL-Auth-Key ' + DEEPL_ACCESS_KEY}, \
     data={"text": [f"{scanned_text}"],
@@ -38,10 +61,10 @@ def _get_translation(scanned_text):
      }
     )
     if response.status_code == 200:
-        print(str(response.json()["translations"][0]["text"]).replace("\n", " "))
-        print("\n")
+        return str(response.json()["translations"][0]["text"]).replace("\n", " ")
     else:
         print(f"Error requesting URL: {url}\n{response.status_code}:\n{response.reason}")
+        return None
 
 
 if __name__=="__main__":
