@@ -14,6 +14,7 @@ from scipy.io.wavfile import write
 
 
 def record_audio():
+    print("recording...")
     fs = 44100  # Sample rate
     seconds = 10  # Duration of recording
 
