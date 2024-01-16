@@ -35,6 +35,8 @@ def text_to_speech(message: str, language = "es"):
     playsound('output.mp3')
 
 def main():
+    input_text = None
+    seconds = None
     choice = input("Enter 1 to record or 2 to type: ")
     try:
         choice = int(choice)
