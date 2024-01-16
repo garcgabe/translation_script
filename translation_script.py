@@ -37,7 +37,7 @@ def text_to_speech(message: str, language = "es"):
 def main():
     choice = input("Enter 1 to record or 2 to type: ")
     try:
-        choice = int(seconds)
+        choice = int(choice)
         if choice == 1:
             seconds = int(input("Enter number of seconds to record: "))
         elif choice == 2:
