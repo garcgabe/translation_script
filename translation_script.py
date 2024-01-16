@@ -1,6 +1,6 @@
 from env import DEEPL_ACCESS_KEY
 import requests
-import os
+import os, time
 
 # text to speech
 from gtts import gTTS 
