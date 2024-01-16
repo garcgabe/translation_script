@@ -1,6 +1,6 @@
 from env import DEEPL_ACCESS_KEY
 import requests
-import time, os
+import os
 
 # text to speech
 from gtts import gTTS 
@@ -11,7 +11,9 @@ import whisper
 
 import sounddevice as sd
 from scipy.io.wavfile import write
+import warnings
 
+warnings.filterwarnings("ignore", message="FP16 is not supported on CPU; using FP32 instead")
 
 def record_audio(seconds):
     print("recording...")
@@ -23,10 +25,7 @@ def record_audio(seconds):
     print("finished recording")
     return
 
- 
-# Whisper performs speech-to-text
-# give it output.wav
-def audio_to_text(audio_file, model="tiny"):
+def audio_to_text(audio_file, model="base"):
     model = whisper.load_model(model)
     return model.transcribe("input.wav")['text']
 
@@ -35,14 +34,21 @@ def text_to_speech(message: str, language = "es"):
     speech.save('output.mp3')
     playsound('output.mp3')
 
-def main(filepath, start_time):
-    seconds = input("Enter number of seconds to record:")
+def main():
+    choice = input("Enter 1 to record or 2 to type: ")
     try:
-        seconds = int(seconds)
+        choice = int(seconds)
+        if choice == 1:
+            seconds = int(input("Enter number of seconds to record: "))
+        elif choice == 2:
+            input_text = int(input("Enter text: "))
+        else:
+            print("Invalid choice")
+            return
     except:
-        print("Seconds must be an integer")
+        print("must be either 1 or 2")
         return
-    if seconds > 2 and seconds < 15:
+    if seconds:
         record_audio(seconds)
         scanned_text = audio_to_text("input.wav")
         print(f"Scanned text: {scanned_text}") 
@@ -50,8 +56,11 @@ def main(filepath, start_time):
         text_to_speech(scanned_text)
         translated = _get_translation(scanned_text)
         print(f"translated: {translated}\n\n") 
+    if input_text:
+        text_to_speech(input_text)
+        translated = _get_translation(input_text)
+        print(f"translated: {translated}\n\n")
 
-    return time.time()
 
 def correct_text(scanned_text):
     answer = input("Is the text correct? (y/n)")
@@ -76,12 +85,9 @@ def _get_translation(scanned_text: str):
 
 
 if __name__=="__main__":
-    session_start_time = time.time()
-    print(f"Session start time: {session_start_time}")
-    filepath = "/Users/garcgabe/Desktop/"
 
     while(True):
         time.sleep(3)
-        session_start_time = main(filepath, session_start_time)
+        main()
 
         
