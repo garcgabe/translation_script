@@ -46,8 +46,8 @@ def main(filepath, start_time):
         record_audio(seconds)
         scanned_text = audio_to_text("input.wav")
         print(f"Scanned text: {scanned_text}") 
-        text_to_speech(scanned_text)
         scanned_text = correct_text(scanned_text)
+        text_to_speech(scanned_text)
         translated = _get_translation(scanned_text)
         print(f"translated: {translated}\n\n") 
 
