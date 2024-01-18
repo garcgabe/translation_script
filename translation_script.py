@@ -35,33 +35,37 @@ def text_to_speech(message: str, language = "es"):
     playsound('output.mp3')
 
 def main():
-    input_text = None
-    seconds = None
-    choice = input("Enter 1 to record or 2 to type: ")
-    try:
-        choice = int(choice)
-        if choice == 1:
-            seconds = int(input("Enter number of seconds to record: "))
-        elif choice == 2:
-            input_text = int(input("Enter text: "))
-        else:
-            print("Invalid choice")
-            return
-    except:
-        print("must be either 1 or 2")
-        return
-    if seconds:
-        record_audio(seconds)
-        scanned_text = audio_to_text("input.wav")
-        print(f"Scanned text: {scanned_text}") 
-        scanned_text = correct_text(scanned_text)
-        text_to_speech(scanned_text)
-        translated = _get_translation(scanned_text)
-        print(f"translated: {translated}\n\n") 
-    if input_text:
-        text_to_speech(input_text)
-        translated = _get_translation(input_text)
-        print(f"translated: {translated}\n\n")
+    input_text = input("Enter text: ")
+    text_to_speech(input_text)
+    translated = _get_translation(input_text)
+    print(f"translated: {translated}\n\n")
+    # input_text = None
+    # seconds = None
+    # choice = input("Enter 1 to record or 2 to type: ")
+    # try:
+    #     choice = int(choice)
+    #     if choice == 1:
+    #         seconds = int(input("Enter number of seconds to record: "))
+    #     elif choice == 2:
+    #         input_text = input("Enter text: ")
+    #     else:
+    #         print("Invalid choice")
+    #         return
+    # except:
+    #     print("must be either 1 or 2")
+    #     return
+    # if seconds:
+    #     record_audio(seconds)
+    #     scanned_text = audio_to_text("input.wav")
+    #     print(f"Scanned text: {scanned_text}") 
+    #     scanned_text = correct_text(scanned_text)
+    #     text_to_speech(scanned_text)
+    #     translated = _get_translation(scanned_text)
+    #     print(f"translated: {translated}\n\n") 
+    # if input_text:
+    #     text_to_speech(input_text)
+    #     translated = _get_translation(input_text)
+    #     print(f"translated: {translated}\n\n")
 
 
 def correct_text(scanned_text):
@@ -89,7 +93,7 @@ def _get_translation(scanned_text: str):
 if __name__=="__main__":
 
     while(True):
-        time.sleep(3)
+        time.sleep(1)
         main()
 
         
