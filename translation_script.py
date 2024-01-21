@@ -38,7 +38,7 @@ def main():
     input_text = input("Enter text: ")
     text_to_speech(input_text)
     translated = _get_translation(input_text)
-    print(f"translated: {translated}\n\n")
+    print(f"translated: {translated}\n")
     # input_text = None
     # seconds = None
     # choice = input("Enter 1 to record or 2 to type: ")
@@ -91,7 +91,6 @@ def _get_translation(scanned_text: str):
 
 
 if __name__=="__main__":
-
     while(True):
         time.sleep(1)
         main()

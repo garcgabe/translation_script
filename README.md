@@ -1,0 +1,1 @@
+short script for translating in terminal.
