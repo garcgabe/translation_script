@@ -35,10 +35,12 @@ def text_to_speech(message: str, language = "es"):
     playsound('output.mp3')
 
 def main():
-    input_text = input("Enter text to translate from Spanish to English: ")
+    print("* * * * * * * * * * * * * * * * * * * * * * * * * * *\n*")
+    input_text = input("***   input: ")
     text_to_speech(input_text)
     translated = _get_translation(input_text)
-    print(f"translated: {translated}\n")
+    print("*\n* * * * * * * * * * * * * * * * * * * * * * * * * * *\n*")
+    print(f"***   output: {translated}\n*")
     # input_text = None
     # seconds = None
     # choice = input("Enter 1 to record or 2 to type: ")
@@ -76,7 +78,8 @@ def correct_text(scanned_text):
         return input("Enter corrected text: ")
 
 def _get_translation(scanned_text: str):
-    response = requests.post(url="https://api-free.deepl.com/v2/translate", 
+    url = "https://api-free.deepl.com/v2/translate"
+    response = requests.post(url=url, 
     headers={'Authorization': 'DeepL-Auth-Key ' + DEEPL_ACCESS_KEY}, \
     data={"text": [f"{scanned_text}"],
      "target_lang": "EN",
@@ -91,6 +94,7 @@ def _get_translation(scanned_text: str):
 
 
 if __name__=="__main__":
+    print("*\n*\n* * *  Spanish to English Translator with DeepL  * * *\n*\n*")
     while(True):
         time.sleep(1)
         main()
