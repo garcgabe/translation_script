@@ -35,7 +35,7 @@ def text_to_speech(message: str, language = "es"):
     playsound('output.mp3')
 
 def main():
-    input_text = input("Enter text: ")
+    input_text = input("Enter text to translate from Spanish to English: ")
     text_to_speech(input_text)
     translated = _get_translation(input_text)
     print(f"translated: {translated}\n")
