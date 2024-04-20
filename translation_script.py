@@ -1,6 +1,6 @@
 from env import DEEPL_ACCESS_KEY
 import requests
-import os, time
+import os, time, sys 
 
 # text to speech
 from gtts import gTTS 
@@ -13,69 +13,99 @@ import sounddevice as sd
 from scipy.io.wavfile import write
 import warnings
 
+import spacy
+
+# Load the Spanish NLP model
+nlp = spacy.load("es_core_news_sm")
+
+# Function to analyze the sentence
+def analyze_sentence(sentence):
+    doc = nlp(sentence)
+    for token in doc:
+        print(token)
+        print(f"Word: {token.text}, Lemma: {token.lemma_}, POS: {token.pos_}")
+
+
 warnings.filterwarnings("ignore", message="FP16 is not supported on CPU; using FP32 instead")
 
-def record_audio(seconds):
-    print("recording...")
-    fs = 44100  # Sample rate
+# def record_audio(seconds):
+#     print("recording...")
+#     fs = 44100  # Sample rate
+#     recording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
+#     sd.wait()  # Wait until recording is finished
+#     write('input.wav', fs, recording)  # Save as WAV file
+#     print("finished recording")
+#     return
 
-    recording = sd.rec(int(seconds * fs), samplerate=fs, channels=1)
-    sd.wait()  # Wait until recording is finished
-    write('input.wav', fs, recording)  # Save as WAV file
-    print("finished recording")
-    return
+# def audio_to_text(audio_file, model="base"):
+#     model = whisper.load_model(model)
+#     return model.transcribe("input.wav")['text']
 
-def audio_to_text(audio_file, model="base"):
-    model = whisper.load_model(model)
-    return model.transcribe("input.wav")['text']
+# def correct_text(scanned_text):
+#     answer = input("Is the text correct? (y/n)")
+#     if answer == "y":
+#         return scanned_text
+#     else:
+#         return input("Enter corrected text: ")
+    
 
-def text_to_speech(message: str, language = "es"):
+def _text_to_speech(message: str, language = "es"):
     speech = gTTS(text=message, lang=language)
     speech.save('output.mp3')
     playsound('output.mp3')
 
 def main():
     print("* * * * * * * * * * * * * * * * * * * * * * * * * * *\n*")
-    input_text = input("***   input: ")
-    text_to_speech(input_text)
-    translated = _get_translation(input_text)
-    print("*\n* * * * * * * * * * * * * * * * * * * * * * * * * * *\n*")
-    print(f"***   output: {translated}\n*")
-    # input_text = None
-    # seconds = None
-    # choice = input("Enter 1 to record or 2 to type: ")
-    # try:
-    #     choice = int(choice)
-    #     if choice == 1:
-    #         seconds = int(input("Enter number of seconds to record: "))
-    #     elif choice == 2:
-    #         input_text = input("Enter text: ")
-    #     else:
-    #         print("Invalid choice")
+    while True:
+        input_text = input("***   input: ")
+
+        _text_to_speech(input_text)
+        translated = _get_translation(input_text)
+        context = _analyze_grammar(input_text, translated)
+
+        print("*\n* * * * * * * * * * * * * * * * * * * * * * * * * * *\n*")
+        print(f"***   output: {translated}\n*")
+        print(f'***   context: {context}\n*')
+
+        response = input("***   enter q&a? (y/n): ")
+        if response.lower() == 'y':
+            while True: 
+                question = input("***   (\"exit\" to exit) enter question: ")
+                if question.lower() == 'exit':
+                    break
+                # Assume _get_qa_response is a function that makes an API call
+                answer = _get_question_response(question, context)
+                print(f"***   answer: {answer}")
+        else: print("*")
+
+    # def commented_out_audio_part():
+    #     input_text = None
+    #     seconds = None
+    #     choice = input("Enter 1 to record or 2 to type: ")
+    #     try:
+    #         choice = int(choice)
+    #         if choice == 1:
+    #             seconds = int(input("Enter number of seconds to record: "))
+    #         elif choice == 2:
+    #             input_text = input("Enter text: ")
+    #         else:
+    #             print("Invalid choice")
+    #             return
+    #     except:
+    #         print("must be either 1 or 2")
     #         return
-    # except:
-    #     print("must be either 1 or 2")
-    #     return
-    # if seconds:
-    #     record_audio(seconds)
-    #     scanned_text = audio_to_text("input.wav")
-    #     print(f"Scanned text: {scanned_text}") 
-    #     scanned_text = correct_text(scanned_text)
-    #     text_to_speech(scanned_text)
-    #     translated = _get_translation(scanned_text)
-    #     print(f"translated: {translated}\n\n") 
-    # if input_text:
-    #     text_to_speech(input_text)
-    #     translated = _get_translation(input_text)
-    #     print(f"translated: {translated}\n\n")
-
-
-def correct_text(scanned_text):
-    answer = input("Is the text correct? (y/n)")
-    if answer == "y":
-        return scanned_text
-    else:
-        return input("Enter corrected text: ")
+    #     if seconds:
+    #         record_audio(seconds)
+    #         scanned_text = audio_to_text("input.wav")
+    #         print(f"Scanned text: {scanned_text}") 
+    #         scanned_text = correct_text(scanned_text)
+    #         text_to_speech(scanned_text)
+    #         translated = _get_translation(scanned_text)
+    #         print(f"translated: {translated}\n\n") 
+    #     if input_text:
+    #         text_to_speech(input_text)
+    #         translated = _get_translation(input_text)
+    #         print(f"translated: {translated}\n\n")
 
 def _get_translation(scanned_text: str):
     url = "https://api-free.deepl.com/v2/translate"
@@ -92,11 +122,16 @@ def _get_translation(scanned_text: str):
         print(f"Error requesting URL: {url}\n{response.status_code}:\n{response.reason}")
         return None
 
+def _analyze_grammar(input: str, translation: str):
+    return "grammar explanation here"
+
+def _get_question_response(question: str, context: dict = None):
+    return f"returning api call with context: {context}"
 
 if __name__=="__main__":
+    #analyze_sentence("Ella canta una canción.")
+    #sys.exit(0)    
     print("*\n*\n* * *  Spanish to English Translator with DeepL  * * *\n*\n*")
-    while(True):
-        time.sleep(1)
-        main()
+    main()
 
         
