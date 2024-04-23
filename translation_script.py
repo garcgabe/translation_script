@@ -1,4 +1,4 @@
-from env import DEEPL_ACCESS_KEY
+from env import DEEPL_ACCESS_KEY, OPENAI_API_KEY
 import requests
 import os, time, sys 
 
@@ -8,12 +8,23 @@ from gtts import gTTS
 from playsound import playsound
 # transcribe audio
 import whisper
+# AI tool
+from openai import OpenAI
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 import sounddevice as sd
 from scipy.io.wavfile import write
 import warnings
 
 import spacy
+
+SYSTEM_PROMPT = """
+    you are a succinct and effective spanish teacher for someone who speaks english. \
+    They are translating spanish sentences to english, and are curious about actual definitions of \
+    spanish words, as well as the conjugations of verbs. point out any important grammatical differences \
+    or similarities between the spanish sentence and the english translation. the goal here is to fully \
+    understand how the spanish was converted to english, and also to take apart the spanish sentence formation.
+"""
 
 # Load the Spanish NLP model
 nlp = spacy.load("es_core_news_sm")
@@ -125,12 +136,22 @@ def _get_translation(scanned_text: str):
 def _analyze_grammar(input: str, translation: str):
     return "grammar explanation here"
 
-def _get_question_response(question: str, context: dict = None):
-    return f"returning api call with context: {context}"
+def _get_question_response(question: str, context: list[dict]):
+    completion = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": f"{SYSTEM_PROMPT}"},
+        {"role": "user", "content": f"{question}"}
+    ],
+    max_tokens=100
+    )
+
+    return completion.choices[0].message.content
 
 if __name__=="__main__":
-    #analyze_sentence("Ella canta una canción.")
-    #sys.exit(0)    
+    _get_question_response("")
+
+    sys.exit(0)    
     print("*\n*\n* * *  Spanish to English Translator with DeepL  * * *\n*\n*")
     main()
 
