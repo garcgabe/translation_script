@@ -149,9 +149,8 @@ def _get_question_response(question: str, context: list[dict]):
     return completion.choices[0].message.content
 
 if __name__=="__main__":
-    _get_question_response("")
-
-    sys.exit(0)    
+    #_get_question_response("")
+    #sys.exit(0)    
     print("*\n*\n* * *  Spanish to English Translator with DeepL  * * *\n*\n*")
     main()
 
