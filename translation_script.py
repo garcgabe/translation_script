@@ -15,6 +15,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 import sounddevice as sd
 from scipy.io.wavfile import write
 import warnings
+warnings.filterwarnings("ignore", message="FP16 is not supported on CPU; using FP32 instead")
 
 import spacy
 
@@ -23,7 +24,8 @@ SYSTEM_PROMPT = """
     They are translating spanish sentences to english, and are curious about actual definitions of \
     spanish words, as well as the conjugations of verbs. point out any important grammatical differences \
     or similarities between the spanish sentence and the english translation. the goal here is to fully \
-    understand how the spanish was converted to english, and also to take apart the spanish sentence formation.
+    understand how the spanish was converted to english, and also to take apart the spanish sentence formation. \
+    You should always answer in English unless asked for Spanish, and you should answer the last user message sent. 
 """
 
 # # Load the Spanish NLP model
@@ -37,8 +39,6 @@ SYSTEM_PROMPT = """
 #         print(f"Word: {token.text}, Lemma: {token.lemma_}, POS: {token.pos_}")
 
 
-warnings.filterwarnings("ignore", message="FP16 is not supported on CPU; using FP32 instead")
-
 def _text_to_speech(message: str, language = "es"):
     speech = gTTS(text=message, lang=language)
     speech.save('output.mp3')
@@ -47,25 +47,42 @@ def _text_to_speech(message: str, language = "es"):
 def main():
     print("* * * * * * * * * * * * * * * * * * * * * * * * * * *\n*")
     while True:
+        # list of dict objects; each dict is a message with a role and a content
+        # ex. [ { "role": "user", "content": "hey there chatGPT!" } ]
+        context = [{"role": "system", "content": f"{SYSTEM_PROMPT}"}]
         input_text = input("***   input: ")
 
         _text_to_speech(input_text)
-        translated = _get_translation(input_text)
-        context = _analyze_grammar(input_text, translated)
-
+        translation = _get_translation(input_text)
         print("*\n* * * * * * * * * * * * * * * * * * * * * * * * * * *\n*")
-        print(f"***   output: {translated}\n*")
-        print(f'***   context: {context}\n*')
+        print(f"***   output: {translation}\n*")
 
-        response = input("***   enter q&a? (y/n): ")
+        full_translation_string = f"Please explain how, in English: {input_text} translates to Spanish as: {translation}"
+        context.append({"role":"user", "content":full_translation_string})
+        translation_explained = _get_question_response(full_translation_string, context) # might wanna make async for performance
+        print(f'***   explanation: {translation_explained}\n*')
+
+        # add the translation string and the agent response
+        context.append({"role":"assistant", "content": translation_explained})
+
+        response = input("***   enter q&a? (y/*): ")
         if response.lower() == 'y':
             while True: 
-                question = input("***   (\"exit\" to exit) enter question: ")
-                if question.lower() == 'exit':
+                question = input("***   enter question: ")
+                if question=='d':
+                    print('\n'+elem for elem in context)
                     break
-                # Assume _get_qa_response is a function that makes an API call
+                if len(question) <=5:
+                    print("*")
+                    print("*")
+                    break
+                print("***")
+                context.append({"role":"user", "content":question})
                 answer = _get_question_response(question, context)
                 print(f"***   answer: {answer}")
+
+                context.append( {"role":"assistant", "content": answer} )
+
         else: print("*")
 
     # def commented_out_audio_part():
@@ -132,28 +149,15 @@ def _get_translation(scanned_text: str):
         print(f"Error requesting URL: {url}\n{response.status_code}:\n{response.reason}")
         return None
 
-def _analyze_grammar(input: str, translation: str):
-    ## 
-    return "grammar explanation here"
-
-def _get_question_response(question: str, context: list[dict]):
+def _get_question_response(input: str, context: list[dict] = None):
     completion = client.chat.completions.create(
     model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": f"{SYSTEM_PROMPT}"},
-        {"role": "user", "content": f"{question}"}
-    ],
-    max_tokens=100
+    messages=context,
+    max_tokens=250
     )
-
     return completion.choices[0].message.content
 
 if __name__=="__main__":
-    response = _get_question_response("hey! ")
-    print(response)
-    sys.exit(0)    
-
-
     print("*\n*\n* * *  Spanish to English Translator with DeepL  * * *\n*\n*")
     main()
 
