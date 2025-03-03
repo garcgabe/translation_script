@@ -8,6 +8,7 @@ import tempfile
 import sounddevice as sd
 from scipy.io.wavfile import write
 import numpy as np
+from prompt import SYSTEM_PROMPT
 
 # AI tool
 from openai import OpenAI
@@ -15,9 +16,9 @@ from openai import OpenAI
 # Constants
 DEEPL_API_URL = "https://api-free.deepl.com/v2/translate"
 MODEL_NAME = "gpt-4o-mini"
-MAX_TOKENS = 500
+MAX_TOKENS = 1500
 SAMPLE_RATE = 44100  # Audio sample rate
-AUDIO_DURATION = 15  # Default recording duration in seconds
+MAX_RECORD_TIME = 45  # Maximum recording time in seconds
 INPUT_MODES = ["text", "voice"]  # Available input modes
 
 # Suppress FP16 warning for whisper
@@ -27,36 +28,6 @@ warnings.filterwarnings(
 
 # Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
-
-# System prompt based on the anatomy structure
-SYSTEM_PROMPT = """
-Goal
-I want a Spanish teaching assistant that helps me understand Spanish sentences by breaking them down \
-into their components and explaining the translation process to English. I am already an intermediate \
-Spanish speaker and want to move from broken Spanish to greak Spanish.
-
-Return Format
-For each Spanish sentence I provide, return:
-1. The complete English translation
-2. A sentence breakdown with literal meanings
-3. Explanation of verb conjugations used
-4. Identification of grammatical structures
-5. Notes on any important differences between Spanish and English syntax
-
-Warnings
-Be careful to explain actual definitions rather than just translations. Highlight false cognates \
-and common misunderstandings. Ensure conjugation explanations are accurate. Do not return markdown text
-
---
-
-Context dump
-For context: I'm an English speaker learning Spanish. I've studied basics but struggle \
-with understanding how Spanish sentences are constructed. I want to fully understand the \
-mechanics behind translations rather than just memorizing phrases. I'm particularly interested \
-in verb conjugations and grammatical differences between the languages. I learn best when I can see \
-exactly how each part of a sentence functions. Please always answer in English unless I specifically \
-request Spanish examples.
-"""
 
 
 def get_translation(text: str):
@@ -71,8 +42,9 @@ def get_translation(text: str):
 
         if response.status_code == 200:
             return str(response.json()["translations"][0]["text"]).replace("\n", " ")
-        print(f"Translation error: {response.status_code} - {response.reason}")
-        return None
+        else:
+            print(f"Translation error: {response.status_code} - {response.reason}")
+            return None
     except Exception as e:
         print(f"Exception during translation: {str(e)}")
         return None
@@ -95,30 +67,66 @@ def print_separator():
     print("*\n* * * * * * * * * * * * * * * * * * * * * * * * * * *\n*")
 
 
-def record_audio(duration=AUDIO_DURATION):
-    """Record audio from microphone for specified duration"""
-    print(f"***   Recording for {duration} seconds... Speak now")
+def record_audio_simple():
+    """Record audio using a simple start/stop approach with ENTER key"""
+    print("***   Press ENTER to start recording...")
+    input()  # Wait for Enter key
 
-    # Record audio
+    print("***   Recording... Press ENTER to stop")
+    print("***   (Recording will automatically stop after 30 seconds)")
+
+    # Start recording
     recording = sd.rec(
-        int(duration * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype='float32'
+        int(MAX_RECORD_TIME * SAMPLE_RATE),
+        samplerate=SAMPLE_RATE,
+        channels=1,
+        dtype='float32',
     )
 
-    # Display countdown
-    for i in range(duration, 0, -1):
-        print(f"***   {i}...", end="\r")
-        time.sleep(1)
+    # Create a separate thread to wait for key press
+    stop_recording = False
 
-    # Wait until recording is finished
-    sd.wait()
-    print("***   Recording finished!")
+    def wait_for_enter():
+        nonlocal stop_recording
+        input()  # Wait for Enter key
+        stop_recording = True
+
+    import threading
+
+    input_thread = threading.Thread(target=wait_for_enter)
+    input_thread.daemon = True
+    input_thread.start()
+
+    # Show recording progress until Enter is pressed or max time is reached
+    start_time = time.time()
+    frame_index = 0
+
+    while not stop_recording and frame_index < len(recording):
+        elapsed = time.time() - start_time
+        print(f"***   Recording: {elapsed:.1f}s", end="\r")
+        time.sleep(0.1)
+        frame_index = int(elapsed * SAMPLE_RATE)
+
+        if elapsed >= MAX_RECORD_TIME:
+            break
+
+    # Calculate actual duration
+    duration = time.time() - start_time
+
+    # Stop recording
+    sd.stop()
+    print(f"\n***   Recording finished! Duration: {duration:.1f} seconds")
+
+    # Trim recording to actual duration
+    actual_frames = int(duration * SAMPLE_RATE)
+    trimmed_recording = recording[:actual_frames]
 
     # Create temporary file for the recording
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio:
         temp_filename = temp_audio.name
         # Normalize and convert to int16
-        recording = np.int16(recording * 32767)
-        write(temp_filename, SAMPLE_RATE, recording)
+        trimmed_recording = np.int16(trimmed_recording * 32767)
+        write(temp_filename, SAMPLE_RATE, trimmed_recording)
 
     return temp_filename
 
@@ -163,8 +171,12 @@ def get_spanish_input(mode):
     if mode == "text":
         return input("***   Enter Spanish text: ")
     elif mode == "voice":
-        # Record and transcribe audio
-        audio_file = record_audio()
+        # Record audio using the simplified approach
+        audio_file = record_audio_simple()
+
+        if not audio_file:
+            return None
+
         transcription = transcribe_audio(audio_file)
 
         if transcription:
@@ -255,6 +267,7 @@ if __name__ == "__main__":
     print("\n* * *  Spanish Learning Assistant  * * *\n")
     print("This application supports text and voice input modes.")
     print("You can speak Spanish and get explanations in English.")
+    print("In voice mode, press ENTER to start recording, then ENTER again to stop.")
 
     try:
         main()
