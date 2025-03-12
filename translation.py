@@ -1,4 +1,4 @@
-from env import DEEPL_ACCESS_KEY, OPENAI_API_KEY
+from env import DEEPL_ACCESS_KEY, OPENAI_API_KEY, ELEVEN_LABS_API_KEY
 import requests
 import os
 import time
@@ -12,6 +12,9 @@ import sounddevice as sd
 from scipy.io.wavfile import write
 import numpy as np
 from openai import OpenAI
+from elevenlabs.client import ElevenLabs
+from elevenlabs import VoiceSettings
+
 
 from prompts import CONVO_PROMPT, TEXT_PROMPT
 
@@ -141,6 +144,7 @@ class AIService:
         self.client = OpenAI(api_key=api_key)
         self.text_model = text_model
         self.audio_model = audio_model
+        self.elevenlabs_client = ElevenLabs(api_key=ELEVEN_LABS_API_KEY)
     
     def get_text_completion(self, context: List[Dict[str, str]], max_tokens: int = MAX_TOKENS) -> str:
         """Get text completion from OpenAI"""
@@ -173,7 +177,7 @@ class AIService:
             print(f"Error transcribing audio: {str(e)}")
             return None
     
-    def text_to_speech(self, text: str, voice: str = "alloy") -> Optional[str]:
+    def text_to_speech(self, text: str) -> Optional[str]:
         """
         Convert text to speech using OpenAI's TTS API
         
@@ -185,25 +189,29 @@ class AIService:
             Path to the audio file or None if there was an error
         """
         try:
-            # TODO: Implement OpenAI's text-to-speech API call here
-            # This is a placeholder for where you'll integrate ChatGPT's voice API
-            
-            # Example implementation (uncomment and modify when ready):
-            response = self.client.audio.speech.create(
-                model="tts-1",  # or "tts-1-hd" for higher quality
-                voice=voice,
-                input=text
+            response = self.elevenlabs_client.text_to_speech.convert(
+                voice_id="21m00Tcm4TlvDq8ikWAM",  # Adam pre-made voice
+                optimize_streaming_latency="0",
+                output_format="mp3_22050_32",
+                text=text,
+                model_id="eleven_multilingual_v2",  # Use turbo model for low latency, for other languages use `eleven_multilingual_v2`
+                voice_settings=VoiceSettings(
+                    stability=0.5,
+                    similarity_boost=0.75,
+                    style=0.15,
+                    speed=0.75
+                ),
             )
-            
-            # Save the audio to a temporary file
+
+            # Save the streamed audio to a temporary file
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio:
                 temp_filename = temp_audio.name
-                response.write_to_file(temp_filename)
-            
+
+                # Iterate over the generator to write chunks to file
+                for chunk in response:
+                    temp_audio.write(chunk)
+
             return temp_filename
-            
-            # print("Text-to-speech functionality to be implemented")
-            # return None
             
         except Exception as e:
             print(f"Error in text-to-speech conversion: {str(e)}")
