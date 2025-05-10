@@ -8,7 +8,7 @@ import tempfile
 import sounddevice as sd
 from scipy.io.wavfile import write
 import numpy as np
-from prompt import SYSTEM_PROMPT
+from prompts import TEXT_PROMPT
 
 # AI tool
 from openai import OpenAI
