@@ -376,36 +376,36 @@ class SpanishLearningAssistant:
         print_separator()
         print(f"***   Translation: {translation}\n*")
 
-        # Build the request for explanation
-        full_translation_string = f"Analyze this Spanish sentence: '{spanish_input}' which translates to English as: '{translation}'"
-        context.append({"role": "user", "content": full_translation_string})
+        # # Build the request for explanation
+        # full_translation_string = f"Analyze this Spanish sentence: '{spanish_input}' which translates to English as: '{translation}'"
+        # context.append({"role": "user", "content": full_translation_string})
 
-        # Get detailed explanation
-        explanation = self.ai_service.get_text_completion(context)
-        print(f"***   Explanation: {explanation}\n*")
+        # # Get detailed explanation
+        # explanation = self.ai_service.get_text_completion(context)
+        # print(f"***   Explanation: {explanation}\n*")
 
-        # Add the explanation to context
-        context.append({"role": "assistant", "content": explanation})
+        # # Add the explanation to context
+        # context.append({"role": "assistant", "content": explanation})
 
-        # Q&A mode
-        response = input("***   Ask follow-up questions? (y/n): ")
-        if response.lower() == 'y':
-            while True:
-                question = input("***   Question (or 'back' to return): ")
+        # # Q&A mode
+        # response = input("***   Ask follow-up questions? (y/n): ")
+        # if response.lower() == 'y':
+        #     while True:
+        #         question = input("***   Question (or 'back' to return): ")
 
-                if question.lower() in ['back', 'b', 'exit', 'quit']:
-                    break
+        #         if question.lower() in ['back', 'b', 'exit', 'quit']:
+        #             break
 
-                if len(question.strip()) <= 3:
-                    continue
+        #         if len(question.strip()) <= 3:
+        #             continue
 
-                print("***")
-                context.append({"role": "user", "content": question})
-                answer = self.ai_service.get_text_completion(context)
-                print(f"***   Answer: {answer}\n*")
+        #         print("***")
+        #         context.append({"role": "user", "content": question})
+        #         answer = self.ai_service.get_text_completion(context)
+        #         print(f"***   Answer: {answer}\n*")
 
-                # Add Q&A to context
-                context.append({"role": "assistant", "content": answer})
+        #         # Add Q&A to context
+        #         context.append({"role": "assistant", "content": answer})
 
         print_separator()
     
