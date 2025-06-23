@@ -24,7 +24,7 @@ OPENAI_TEXT_MODEL = "gpt-4o-mini"
 OPENAI_AUDIO_MODEL = "whisper-1"
 MAX_TOKENS = 1500
 SAMPLE_RATE = 44100  # Audio sample rate
-MAX_RECORD_TIME = 45  # Maximum recording time in seconds
+MAX_RECORD_TIME = 60  # Maximum recording time in seconds
 INPUT_MODES = ["text", "voice", "conversation"]  # Available input modes
 
 # Suppress FP16 warning for whisper
@@ -235,8 +235,8 @@ class AIService:
             import subprocess
             subprocess.call(["afplay", audio_file_path])  # macOS
             
-            print(f"Playing audio from {audio_file_path}")
-            print("Audio playback functionality to be implemented")
+            #print(f"Playing audio from {audio_file_path}")
+            #print("Audio playback functionality to be implemented")
             return True
             
         except Exception as e:
@@ -299,61 +299,58 @@ class SpanishLearningAssistant:
         return None
     
     def conversation_mode(self) -> None:
-        """Handle conversation mode with AI agent using voice"""
+        """Handle conversation mode with AI agent using voice or text"""
         print_separator()
         print("***   Starting conversation mode")
-        print("***   You can speak in Spanish, and the AI will respond in English")
-        print("***   Type 'exit' or 'back' to return to the main menu")
-        
-        # Initialize conversation context
-        context = [{"role": "system", "content": CONVO_PROMPT}]
-        
+        print("***   You can speak in Spanish, and the AI will respond.")
+        print("***   Type 'exit' or 'back' at any time to return to the main menu")
+
+        # Ask once for input mode
         while True:
-            # Get user input (voice or text)
-            input_type = input("***   Input type: [v]oice or [t]ext? (or 'back' to exit): ").lower()
-            
-            if input_type in ['back', 'exit', 'b', 'e']:
-                break
-                
-            user_input = None
-            
+            input_type = input("***   Choose input mode: [v]oice or [t]ext: ").strip().lower()
             if input_type.startswith('v'):
-                # Record and transcribe voice input
+                mode = 'voice'
+                break
+            elif input_type.startswith('t'):
+                mode = 'text'
+                break
+            else:
+                print("***   Invalid option. Please enter 'v' or 't'.")
+
+        context = [{"role": "system", "content": CONVO_PROMPT}]
+
+        while True:
+            user_input = None
+
+            if mode == 'voice':
                 audio_file = self.audio_recorder.record_audio()
                 if audio_file:
                     user_input = self.ai_service.transcribe_audio(audio_file)
                     if user_input:
                         print(f"***   You said: {user_input}")
             else:
-                # Get text input
                 user_input = input("***   Your message: ")
-                
+
             if not user_input or user_input.lower() in ['back', 'exit']:
                 break
-                
-            # Translate if it's in Spanish
-            # Note: In a real implementation, you might want to detect the language first
+
+            # Translate if needed
             translation = self.translator.translate(user_input)
             if translation:
                 print(f"***   Translation: {translation}")
-                
-            # Add to context and get AI response
+
             context.append({"role": "user", "content": user_input})
             response = self.ai_service.get_text_completion(context)
             print(f"***   AI: {response}")
-            
-            # TODO: Convert AI response to speech
+
             speech_file = self.ai_service.text_to_speech(response)
             if speech_file:
                 self.ai_service.play_audio(speech_file)
-                # Clean up the file after playing
                 os.remove(speech_file)
-            
-            # Add AI response to context for conversation continuity
+
             context.append({"role": "assistant", "content": response})
-            
             print_separator()
-    
+
     def translation_mode(self, mode: str) -> None:
         """Handle translation and explanation mode"""
         # Initialize context with system prompt
