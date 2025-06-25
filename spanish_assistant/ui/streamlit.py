@@ -4,6 +4,9 @@ from services.translator import TranslationService
 from services.audio_recorder import record_audio
 from prompts import CONVO_PROMPT
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # --- Initialize services ---
 translator = TranslationService()
