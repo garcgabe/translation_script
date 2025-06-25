@@ -6,8 +6,6 @@ from prompts import CONVO_PROMPT
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 # --- Initialize services ---
 translator = TranslationService()
 ai_service = AIService()
